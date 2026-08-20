@@ -1,6 +1,7 @@
 "use client"
 import { signIn, signOut, useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
+import Link from "next/link"
 
 type Game = {
   appid: number
@@ -32,7 +33,9 @@ export default function Home() {
         {loading && <p>Carregando jogos...</p>}
         <ul>
           {games.map((game) => (
-            <li key={game.appid}>{game.name}</li>
+            <li key={game.appid}>
+              <Link href={`/games/${game.appid}`}>{game.name}</Link>
+            </li>
           ))}
         </ul>
       </main>
