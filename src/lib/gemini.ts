@@ -12,16 +12,16 @@ export async function generateAchievementGuide({
   const apiKey = process.env.GEMINI_API_KEY
 
   const prompt = `Você é um assistente especializado em guias de conquistas de jogos. 
-Pesquise na web (incluindo Reddit, fóruns e guias de jogos) e escreva um guia curto e prático, em português, de como desbloquear esta conquista:
+Com base no seu conhecimento sobre o jogo, escreva um guia curto e prático, em português, de como desbloquear esta conquista:
 
 Jogo: ${gameName}
 Conquista: ${achievementName}
 Descrição oficial: ${achievementDescription}
 
-Responda em no máximo 5-6 frases, direto ao ponto, com passos práticos. Não invente informação que não encontrar nas fontes.`
+Responda em no máximo 5-6 frases, direto ao ponto, com passos práticos. Se não tiver certeza sobre algum detalhe específico, seja honesto sobre isso ao invés de inventar.`
 
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`,
     {
       method: "POST",
       headers: {
@@ -30,7 +30,6 @@ Responda em no máximo 5-6 frases, direto ao ponto, com passos práticos. Não i
       },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        tools: [{ google_search: {} }],
       }),
     }
   )
