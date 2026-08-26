@@ -26,6 +26,13 @@ export default function GameAchievementsPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Guias já salvos no Supabase, buscados ao carregar a página
+  const [savedGuides, setSavedGuides] = useState<Record<string, string>>({})
+  // Guias gerados nesta sessão (recém-criados, ainda não recarregados do banco)
+  const [dynamicGuides, setDynamicGuides] = useState<Record<string, string>>({})
+  const [generating, setGenerating] = useState<Record<string, boolean>>({})
+  const [generateErrors, setGenerateErrors] = useState<Record<string, string>>({})
+
   useEffect(() => {
     setLoading(true)
     fetch(`/api/steam/achievements/${appid}`)
@@ -38,7 +45,47 @@ export default function GameAchievementsPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
+
+    // Busca em paralelo os guias já salvos no banco pra esse jogo
+    fetch(`/api/guides?appid=${appid}`)
+      .then((res) => res.json())
+      .then((json) => setSavedGuides(json))
+      .catch(() => {
+        // Se falhar, não é crítico — só não mostra os guias já salvos de cara
+        setSavedGuides({})
+      })
   }, [appid])
+
+  async function handleGenerateGuide(a: Achievement) {
+    setGenerating((prev) => ({ ...prev, [a.apiname]: true }))
+    setGenerateErrors((prev) => ({ ...prev, [a.apiname]: "" }))
+
+    try {
+      const res = await fetch("/api/guides/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appid,
+          apiname: a.apiname,
+          gameName: data?.gameName,
+          achievementName: a.name,
+          achievementDescription: a.description,
+        }),
+      })
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        throw new Error(json.error ?? "Erro ao gerar guia")
+      }
+
+      setDynamicGuides((prev) => ({ ...prev, [a.apiname]: json.guideText }))
+    } catch (err: any) {
+      setGenerateErrors((prev) => ({ ...prev, [a.apiname]: err.message }))
+    } finally {
+      setGenerating((prev) => ({ ...prev, [a.apiname]: false }))
+    }
+  }
 
   if (loading) {
     return (
@@ -58,7 +105,7 @@ export default function GameAchievementsPage() {
 
   if (!data) return null
 
-  const gameGuides = achievementGuides[appid] ?? {}
+  const staticGuides = achievementGuides[appid] ?? {}
 
   return (
     <main style={{ padding: "2rem" }}>
@@ -69,7 +116,11 @@ export default function GameAchievementsPage() {
 
       <ul style={{ marginTop: "1.5rem", listStyle: "none", padding: 0 }}>
         {data.achievements.map((a) => {
-          const guide = gameGuides[a.apiname]
+          // Prioridade: guia curado manualmente > já salvo no banco > gerado nesta sessão
+          const guide =
+            staticGuides[a.apiname] ?? savedGuides[a.apiname] ?? dynamicGuides[a.apiname]
+          const isGenerating = generating[a.apiname]
+          const generateError = generateErrors[a.apiname]
 
           return (
             <li
@@ -107,6 +158,23 @@ export default function GameAchievementsPage() {
                   }}
                 >
                   💡 <strong>Dica:</strong> {guide}
+                </div>
+              )}
+
+              {!a.unlocked && !guide && (
+                <div style={{ marginTop: "0.5rem" }}>
+                  <button
+                    onClick={() => handleGenerateGuide(a)}
+                    disabled={isGenerating}
+                    style={{ fontSize: "0.85rem" }}
+                  >
+                    {isGenerating ? "Gerando dica com IA..." : "🔍 Gerar dica"}
+                  </button>
+                  {generateError && (
+                    <p style={{ color: "salmon", fontSize: "0.8rem", marginTop: "0.3rem" }}>
+                      Erro: {generateError}
+                    </p>
+                  )}
                 </div>
               )}
             </li>
