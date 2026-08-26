@@ -2,23 +2,29 @@ type GuideRequest = {
   gameName: string
   achievementName: string
   achievementDescription: string
+  searchContext: string
 }
 
 export async function generateAchievementGuide({
   gameName,
   achievementName,
   achievementDescription,
+  searchContext,
 }: GuideRequest): Promise<{ text: string }> {
   const apiKey = process.env.GEMINI_API_KEY
 
-  const prompt = `Você é um assistente especializado em guias de conquistas de jogos. 
-Com base no seu conhecimento sobre o jogo, escreva um guia curto e prático, em português, de como desbloquear esta conquista:
+  const prompt = `Você é um assistente especializado em guias de conquistas de jogos.
+Abaixo estão trechos de páginas da web pesquisadas sobre esta conquista. Use SOMENTE essas informações (não invente nada que não esteja nelas) para escrever um guia curto e prático, em português, de como desbloquear:
 
 Jogo: ${gameName}
 Conquista: ${achievementName}
 Descrição oficial: ${achievementDescription}
 
-Responda em no máximo 5-6 frases, direto ao ponto, com passos práticos. Se não tiver certeza sobre algum detalhe específico, seja honesto sobre isso ao invés de inventar.`
+--- CONTEÚDO PESQUISADO NA WEB ---
+${searchContext}
+--- FIM DO CONTEÚDO ---
+
+Responda em no máximo 5-6 frases, direto ao ponto, com passos práticos. Se o conteúdo pesquisado não for suficiente pra responder com confiança, diga isso claramente em vez de inventar.`
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`,

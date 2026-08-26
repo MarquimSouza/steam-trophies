@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { generateAchievementGuide } from "@/lib/gemini"
+import { searchAchievementGuide } from "@/lib/tavily"
 import type { NextRequest } from "next/server"
 
 export async function POST(req: NextRequest) {
@@ -31,11 +32,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    console.log("Chamando Gemini...")
+    console.log("Buscando na web com Tavily...")
+    const searchContext = await searchAchievementGuide(
+      `${gameName} "${achievementName}" achievement guide how to unlock`
+    )
+    console.log("Tavily retornou resultados")
+
+    console.log("Chamando Gemini para sintetizar...")
     const { text } = await generateAchievementGuide({
       gameName,
       achievementName,
       achievementDescription: achievementDescription ?? "",
+      searchContext,
     })
     console.log("Gemini respondeu com sucesso")
 
@@ -53,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ guideText: text, cached: false })
   } catch (err: any) {
-    console.log("ERRO NO GEMINI:", err.message)
+    console.log("ERRO:", err.message)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
