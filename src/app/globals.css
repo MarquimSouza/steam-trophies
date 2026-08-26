@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+:root {
+  --bg-base: #0f1115;
+  --bg-surface: #171a21;
+  --bg-surface-hover: #1f232c;
+  --border-subtle: #2a2e38;
+  --gold: #e8a94d;
+  --text-primary: #eaebee;
+  --text-secondary: #9198a1;
+
+  --rarity-common: #9ca3af;
+  --rarity-uncommon: #4ade80;
+  --rarity-rare: #60a5fa;
+  --rarity-epic: #c084fc;
+  --rarity-legendary: #f59e0b;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}

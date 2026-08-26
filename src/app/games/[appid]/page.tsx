@@ -1,7 +1,9 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
+import Link from "next/link"
 import { achievementGuides } from "@/data/guides"
+import { getRarityTier } from "@/lib/rarity"
 
 type Achievement = {
   apiname: string
@@ -26,9 +28,7 @@ export default function GameAchievementsPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Guias já salvos no Supabase, buscados ao carregar a página
   const [savedGuides, setSavedGuides] = useState<Record<string, string>>({})
-  // Guias gerados nesta sessão (recém-criados, ainda não recarregados do banco)
   const [dynamicGuides, setDynamicGuides] = useState<Record<string, string>>({})
   const [generating, setGenerating] = useState<Record<string, boolean>>({})
   const [generateErrors, setGenerateErrors] = useState<Record<string, string>>({})
@@ -46,14 +46,10 @@ export default function GameAchievementsPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
 
-    // Busca em paralelo os guias já salvos no banco pra esse jogo
     fetch(`/api/guides?appid=${appid}`)
       .then((res) => res.json())
       .then((json) => setSavedGuides(json))
-      .catch(() => {
-        // Se falhar, não é crítico — só não mostra os guias já salvos de cara
-        setSavedGuides({})
-      })
+      .catch(() => setSavedGuides({}))
   }, [appid])
 
   async function handleGenerateGuide(a: Achievement) {
@@ -89,16 +85,19 @@ export default function GameAchievementsPage() {
 
   if (loading) {
     return (
-      <main style={{ padding: "2rem" }}>
-        <p>Carregando conquistas...</p>
+      <main className="min-h-screen flex items-center justify-center">
+        <p className="text-[var(--text-secondary)]">Carregando conquistas...</p>
       </main>
     )
   }
 
   if (error) {
     return (
-      <main style={{ padding: "2rem" }}>
-        <p>Erro: {error}</p>
+      <main className="min-h-screen px-6 py-10 max-w-3xl mx-auto">
+        <Link href="/" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+          ← Voltar à biblioteca
+        </Link>
+        <p className="mt-6 text-red-400">Erro: {error}</p>
       </main>
     )
   }
@@ -106,74 +105,83 @@ export default function GameAchievementsPage() {
   if (!data) return null
 
   const staticGuides = achievementGuides[appid] ?? {}
+  const progressPercent = Math.round((data.unlockedCount / data.total) * 100)
 
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>{data.gameName}</h1>
-      <p>
-        {data.unlockedCount} de {data.total} conquistas
-      </p>
+    <main className="min-h-screen px-6 py-10 max-w-3xl mx-auto">
+      <Link
+        href="/"
+        className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors inline-flex items-center gap-1 mb-6"
+      >
+        ← Voltar à biblioteca
+      </Link>
 
-      <ul style={{ marginTop: "1.5rem", listStyle: "none", padding: 0 }}>
+      <h1 className="text-2xl font-bold">{data.gameName}</h1>
+      <div className="flex items-center gap-3 mt-2 mb-8">
+        <div className="flex-1 h-2 bg-[var(--bg-surface)] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[var(--gold)] transition-all"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+        <span className="text-sm text-[var(--text-secondary)] font-mono whitespace-nowrap">
+          {data.unlockedCount}/{data.total}
+        </span>
+      </div>
+
+      <ul className="flex flex-col gap-3">
         {data.achievements.map((a) => {
-          // Prioridade: guia curado manualmente > já salvo no banco > gerado nesta sessão
           const guide =
             staticGuides[a.apiname] ?? savedGuides[a.apiname] ?? dynamicGuides[a.apiname]
           const isGenerating = generating[a.apiname]
           const generateError = generateErrors[a.apiname]
+          const rarity = getRarityTier(a.globalPercent)
 
           return (
             <li
               key={a.apiname}
+              className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg p-4"
               style={{
-                marginBottom: "1rem",
-                opacity: a.unlocked ? 0.6 : 1,
-                borderBottom: "1px solid #333",
-                paddingBottom: "0.75rem",
+                borderLeft: `3px solid ${rarity.color}`,
+                opacity: a.unlocked ? 0.55 : 1,
               }}
             >
-              <strong>
-                {a.name} {a.unlocked ? "✅" : ""}
-              </strong>
-              <br />
-              <span style={{ fontSize: "0.9rem", color: "#888" }}>
-                {a.description}
-              </span>
-              <br />
-              {a.globalPercent !== null && (
-                <span style={{ fontSize: "0.8rem" }}>
-                  {a.globalPercent.toFixed(1)}% dos jogadores desbloquearam
-                </span>
-              )}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-medium">
+                    {a.name} {a.unlocked ? "✅" : ""}
+                  </p>
+                  <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+                    {a.description}
+                  </p>
+                </div>
+                {a.globalPercent !== null && (
+                  <span
+                    className="text-xs font-mono whitespace-nowrap px-2 py-1 rounded"
+                    style={{ color: rarity.color, backgroundColor: `${rarity.color}1a` }}
+                  >
+                    {rarity.label} · {a.globalPercent.toFixed(1)}%
+                  </span>
+                )}
+              </div>
 
               {!a.unlocked && guide && (
-                <div
-                  style={{
-                    marginTop: "0.5rem",
-                    padding: "0.75rem",
-                    background: "#1a1a1a",
-                    borderRadius: "6px",
-                    fontSize: "0.85rem",
-                    lineHeight: "1.4",
-                  }}
-                >
+                <div className="mt-3 p-3 bg-[var(--bg-base)] rounded-md text-sm leading-relaxed">
                   💡 <strong>Dica:</strong> {guide}
                 </div>
               )}
 
               {!a.unlocked && !guide && (
-                <div style={{ marginTop: "0.5rem" }}>
+                <div className="mt-3">
                   <button
                     onClick={() => handleGenerateGuide(a)}
                     disabled={isGenerating}
-                    style={{ fontSize: "0.85rem" }}
+                    className="text-sm bg-[var(--bg-surface-hover)] hover:bg-[#2a2e38] disabled:opacity-50 transition-colors px-3 py-1.5 rounded-md"
                   >
                     {isGenerating ? "Gerando dica com IA..." : "🔍 Gerar dica"}
                   </button>
                   {generateError && (
-                    <p style={{ color: "salmon", fontSize: "0.8rem", marginTop: "0.3rem" }}>
-                      Erro: {generateError}
-                    </p>
+                    <p className="text-red-400 text-xs mt-1.5">Erro: {generateError}</p>
                   )}
                 </div>
               )}
