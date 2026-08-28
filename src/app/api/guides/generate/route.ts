@@ -1,67 +1,69 @@
 import { NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 import { generateAchievementGuide } from "@/lib/gemini"
-import { searchAchievementGuide } from "@/lib/tavily"
+import { searchAchievementGuide, searchYoutubeVideo } from "@/lib/tavily"
 import type { NextRequest } from "next/server"
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { appid, apiname, gameName, achievementName, achievementDescription } = body
 
-  console.log("=== Iniciando geração de guia ===")
-  console.log("appid:", appid, "apiname:", apiname)
-
   if (!appid || !apiname || !gameName || !achievementName) {
     return NextResponse.json({ error: "Dados incompletos" }, { status: 400 })
   }
 
-  const { data: existing, error: selectError } = await supabase
+  const { data: existing } = await supabase
     .from("achievement_guides")
-    .select("guide_text")
+    .select("guide_text, video_url")
     .eq("appid", String(appid))
     .eq("apiname", apiname)
     .maybeSingle()
 
-  if (selectError) {
-    console.log("ERRO NO SUPABASE (select):", selectError.message)
-  }
-
   if (existing) {
-    console.log("Guia já existia no cache")
-    return NextResponse.json({ guideText: existing.guide_text, cached: true })
+    return NextResponse.json({
+      guideText: existing.guide_text,
+      videoUrl: existing.video_url,
+      cached: true,
+    })
   }
 
   try {
-    console.log("Buscando na web com Tavily...")
-    const searchContext = await searchAchievementGuide(
-      `${gameName} "${achievementName}" achievement guide how to unlock`
-    )
-    console.log("Tavily retornou resultados")
+    const description = achievementDescription ?? ""
 
-    console.log("Chamando Gemini para sintetizar...")
+    const searchQuery = description
+      ? `how to ${achievementName}: ${description} - ${gameName} achievement guide`
+      : `how to unlock ${achievementName} - ${gameName} achievement guide`
+
+    // Query de vídeo mais simples e direta — funciona melhor pra achar resultado no YouTube
+    const videoQuery = `${gameName} ${achievementName} achievement`
+
+    console.log("Query de vídeo:", videoQuery)
+
+    const [searchContext, videoUrl] = await Promise.all([
+      searchAchievementGuide(searchQuery),
+      searchYoutubeVideo(videoQuery),
+    ])
+
+    console.log("Vídeo encontrado:", videoUrl)
+
     const { text } = await generateAchievementGuide({
       gameName,
       achievementName,
-      achievementDescription: achievementDescription ?? "",
+      achievementDescription: description,
       searchContext,
     })
-    console.log("Gemini respondeu com sucesso")
 
-    const { error: insertError } = await supabase.from("achievement_guides").insert({
+    await supabase.from("achievement_guides").insert({
       appid: String(appid),
       apiname,
       game_name: gameName,
       achievement_name: achievementName,
       guide_text: text,
+      video_url: videoUrl,
     })
 
-    if (insertError) {
-      console.log("ERRO NO SUPABASE (insert):", insertError.message)
-    }
-
-    return NextResponse.json({ guideText: text, cached: false })
+    return NextResponse.json({ guideText: text, videoUrl, cached: false })
   } catch (err: any) {
-    console.log("ERRO:", err.message)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

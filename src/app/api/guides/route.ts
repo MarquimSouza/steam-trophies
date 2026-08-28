@@ -12,17 +12,16 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("achievement_guides")
-    .select("apiname, guide_text")
+    .select("apiname, guide_text, video_url")
     .eq("appid", appid)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Transforma em um objeto { apiname: guide_text }, mais fácil de usar na tela
-  const guidesMap: Record<string, string> = {}
+  const guidesMap: Record<string, { text: string; videoUrl: string | null }> = {}
   for (const row of data ?? []) {
-    guidesMap[row.apiname] = row.guide_text
+    guidesMap[row.apiname] = { text: row.guide_text, videoUrl: row.video_url }
   }
 
   return NextResponse.json(guidesMap)

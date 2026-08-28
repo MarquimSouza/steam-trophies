@@ -1,6 +1,6 @@
 "use client"
 import { signIn, signOut, useSession } from "next-auth/react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 
 type Game = {
@@ -13,6 +13,8 @@ export default function Home() {
   const { data: session } = useSession()
   const [games, setGames] = useState<Game[]>([])
   const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState("")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
 
   useEffect(() => {
     if (session) {
@@ -23,6 +25,12 @@ export default function Home() {
         .finally(() => setLoading(false))
     }
   }, [session])
+
+  const visibleGames = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return games
+    return games.filter((g) => g.name.toLowerCase().includes(query))
+  }, [games, search])
 
   if (!session) {
     return (
@@ -46,7 +54,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-10 max-w-3xl mx-auto">
+    <main className="min-h-screen px-6 py-10 max-w-5xl mx-auto">
       <header className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-[var(--gold)]">Steam Trophies</h1>
@@ -62,27 +70,90 @@ export default function Home() {
         </button>
       </header>
 
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-secondary)] mb-3">
-        Sua biblioteca
-      </h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+          Sua biblioteca
+        </h2>
+        <span className="text-xs text-[var(--text-secondary)] font-mono">
+          {visibleGames.length} jogos
+        </span>
+      </div>
+
+      <div className="flex items-center gap-3 mb-6">
+        <input
+          type="text"
+          placeholder="Buscar jogo..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg px-3 py-2 text-sm placeholder:text-[var(--text-secondary)] focus:outline-none focus:border-[var(--gold)]"
+        />
+        <div className="flex bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg overflow-hidden">
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`px-3 py-2 text-sm ${viewMode === "grid" ? "bg-[var(--bg-surface-hover)] text-[var(--gold)]" : "text-[var(--text-secondary)]"}`}
+            aria-label="Ver em grade"
+          >
+            ▦
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={`px-3 py-2 text-sm ${viewMode === "list" ? "bg-[var(--bg-surface-hover)] text-[var(--gold)]" : "text-[var(--text-secondary)]"}`}
+            aria-label="Ver em lista"
+          >
+            ☰
+          </button>
+        </div>
+      </div>
 
       {loading && (
         <p className="text-[var(--text-secondary)]">Carregando jogos...</p>
       )}
 
-      <ul className="flex flex-col gap-2">
-        {games.map((game) => (
-          <li key={game.appid}>
+      {!loading && visibleGames.length === 0 && (
+        <p className="text-[var(--text-secondary)] text-sm">
+          Nenhum jogo encontrado para "{search}".
+        </p>
+      )}
+
+      {viewMode === "grid" ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {visibleGames.map((game) => (
             <Link
+              key={game.appid}
               href={`/games/${game.appid}`}
-              className="flex items-center justify-between bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] transition-colors rounded-lg px-4 py-3 border border-[var(--border-subtle)]"
+              className="group bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] transition-colors rounded-lg overflow-hidden border border-[var(--border-subtle)] flex flex-col"
             >
-              <span className="font-medium">{game.name}</span>
-              <span className="text-[var(--text-secondary)]">→</span>
+              <div className="aspect-[2/3] bg-[var(--bg-base)] overflow-hidden">
+                <img
+                  src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    ;(e.target as HTMLImageElement).style.display = "none"
+                  }}
+                />
+              </div>
+              <div className="p-2.5">
+                <p className="text-sm font-medium line-clamp-2">{game.name}</p>
+              </div>
             </Link>
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {visibleGames.map((game) => (
+            <li key={game.appid}>
+              <Link
+                href={`/games/${game.appid}`}
+                className="flex items-center justify-between bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] transition-colors rounded-lg px-4 py-3 border border-[var(--border-subtle)]"
+              >
+                <span className="font-medium">{game.name}</span>
+                <span className="text-[var(--text-secondary)]">→</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   )
 }

@@ -14,7 +14,7 @@ export async function generateAchievementGuide({
   const apiKey = process.env.GEMINI_API_KEY
 
   const prompt = `Você é um assistente especializado em guias de conquistas de jogos.
-Abaixo estão trechos de páginas da web pesquisadas sobre esta conquista. Use SOMENTE essas informações (não invente nada que não esteja nelas) para escrever um guia curto e prático, em português, de como desbloquear:
+Abaixo estão trechos de páginas da web (em inglês ou outro idioma) pesquisadas sobre esta conquista. Use SOMENTE essas informações (não invente nada que não esteja nelas) e traduza/escreva a resposta em PORTUGUÊS, mesmo que o conteúdo original esteja em outro idioma:
 
 Jogo: ${gameName}
 Conquista: ${achievementName}
@@ -24,7 +24,7 @@ Descrição oficial: ${achievementDescription}
 ${searchContext}
 --- FIM DO CONTEÚDO ---
 
-Responda em no máximo 5-6 frases, direto ao ponto, com passos práticos. Se o conteúdo pesquisado não for suficiente pra responder com confiança, diga isso claramente em vez de inventar.`
+Responda em português, em no máximo 5-6 frases, direto ao ponto, com passos práticos. Se o conteúdo pesquisado não for suficiente pra responder com confiança, diga isso claramente em vez de inventar.`
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent`,
