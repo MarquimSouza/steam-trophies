@@ -1,36 +1,37 @@
-"use client"
-import { signIn, signOut, useSession } from "next-auth/react"
-import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
+"use client";
+import { signIn, signOut, useSession } from "next-auth/react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { GameCover } from "@/components/GameCover";
 
 type Game = {
-  appid: number
-  name: string
-  playtime_forever: number
-}
+  appid: number;
+  name: string;
+  playtime_forever: number;
+};
 
 export default function Home() {
-  const { data: session } = useSession()
-  const [games, setGames] = useState<Game[]>([])
-  const [loading, setLoading] = useState(false)
-  const [search, setSearch] = useState("")
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const { data: session } = useSession();
+  const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
     if (session) {
-      setLoading(true)
+      setLoading(true);
       fetch("/api/steam/games")
         .then((res) => res.json())
         .then((data) => setGames(data))
-        .finally(() => setLoading(false))
+        .finally(() => setLoading(false));
     }
-  }, [session])
+  }, [session]);
 
   const visibleGames = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return games
-    return games.filter((g) => g.name.toLowerCase().includes(query))
-  }, [games, search])
+    const query = search.trim().toLowerCase();
+    if (!query) return games;
+    return games.filter((g) => g.name.toLowerCase().includes(query));
+  }, [games, search]);
 
   if (!session) {
     return (
@@ -50,14 +51,16 @@ export default function Home() {
           Entrar com Steam
         </button>
       </main>
-    )
+    );
   }
 
   return (
     <main className="min-h-screen px-6 py-10 max-w-5xl mx-auto">
       <header className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--gold)]">Steam Trophies</h1>
+          <h1 className="text-2xl font-bold text-[var(--gold)]">
+            Steam Trophies
+          </h1>
           <p className="text-sm text-[var(--text-secondary)]">
             Logado como {session.user?.name}
           </p>
@@ -124,14 +127,7 @@ export default function Home() {
               className="group bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] transition-colors rounded-lg overflow-hidden border border-[var(--border-subtle)] flex flex-col"
             >
               <div className="aspect-[2/3] bg-[var(--bg-base)] overflow-hidden">
-                <img
-                  src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    ;(e.target as HTMLImageElement).style.display = "none"
-                  }}
-                />
+                <GameCover appid={game.appid} name={game.name} />
               </div>
               <div className="p-2.5">
                 <p className="text-sm font-medium line-clamp-2">{game.name}</p>
@@ -155,5 +151,5 @@ export default function Home() {
         </ul>
       )}
     </main>
-  )
+  );
 }

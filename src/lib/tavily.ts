@@ -47,12 +47,10 @@ export async function searchYoutubeVideo(query: string): Promise<string | null> 
   })
 
   if (!res.ok) {
-    console.log("Tavily (vídeo) erro:", await res.text())
     return null
   }
 
   const data = await res.json()
-  console.log("Tavily (vídeo) resultados:", JSON.stringify(data.results?.map((r: any) => r.url)))
 
   const firstVideo = (data.results ?? []).find(
     (r: any) => r.url.includes("youtube.com/watch") || r.url.includes("youtube.com/shorts")
