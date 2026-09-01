@@ -4,9 +4,10 @@ import type { NextRequest } from "next/server"
 
 async function handler(
   req: NextRequest,
-  ctx: { params: { nextauth: string[] } }
+  ctx: { params: Promise<{ nextauth: string[] }> }
 ) {
-  return NextAuth(req, ctx, getAuthOptions(req))
+  const params = await ctx.params
+  return NextAuth(req, { params }, getAuthOptions(req))
 }
 
 export { handler as GET, handler as POST }
