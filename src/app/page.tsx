@@ -1,76 +1,91 @@
-"use client";
-import { signIn, signOut, useSession } from "next-auth/react";
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { GameCover } from "@/components/GameCover";
+"use client"
+import { signIn, signOut, useSession } from "next-auth/react"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { useTheme } from "./theme-provider"
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { GameCover } from "@/components/GameCover"
 
 type Game = {
-  appid: number;
-  name: string;
-  playtime_forever: number;
-};
+  appid: number
+  name: string
+  playtime_forever: number
+}
 
 export default function Home() {
-  const { data: session } = useSession();
-  const [games, setGames] = useState<Game[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const { data: session } = useSession()
+  const { theme } = useTheme()
+  const [games, setGames] = useState<Game[]>([])
+  const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState("")
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
 
   useEffect(() => {
     if (session) {
-      setLoading(true);
+      setLoading(true)
       fetch("/api/steam/games")
         .then((res) => res.json())
         .then((data) => setGames(data))
-        .finally(() => setLoading(false));
+        .finally(() => setLoading(false))
     }
-  }, [session]);
+  }, [session])
 
   const visibleGames = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return games;
-    return games.filter((g) => g.name.toLowerCase().includes(query));
-  }, [games, search]);
+    const query = search.trim().toLowerCase()
+    if (!query) return games
+    return games.filter((g) => g.name.toLowerCase().includes(query))
+  }, [games, search])
 
   if (!session) {
+    const wordmark = theme === "dark" ? "/logo_black.png" : "/logo_white.png"
+    const bgClass = theme === "dark" ? "bg-black" : "bg-white"
+
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center gap-6 px-6">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-[var(--gold)]">
-            Platinai
-          </h1>
-          <p className="mt-2 text-[var(--text-secondary)]">
-            Veja o que falta pra platinar seus jogos, e como fazer isso.
-          </p>
+      <main className={`min-h-screen w-full flex flex-col items-center justify-center gap-8 px-6 ${bgClass}`}>
+        <div className="absolute top-4 right-4 z-10">
+          <ThemeToggle />
         </div>
-        <button
-          onClick={() => signIn("steam")}
-          className="bg-[#1b2838] hover:bg-[#2a3f5a] transition-colors text-white px-6 py-3 rounded-lg font-medium"
-        >
-          Entrar com Steam
-        </button>
+
+        <div className="flex flex-col items-center gap-8 w-full max-w-md">
+          <div className="text-center w-full">
+            <img
+              src={wordmark}
+              alt="Platinai"
+              className="w-full max-w-[360px] h-auto mx-auto"
+            />
+            <p className="mt-4 text-base text-[var(--text-secondary)]">
+              Veja o que falta pra platinar seus jogos, e como fazer isso.
+            </p>
+          </div>
+          <button
+            onClick={() => signIn("steam")}
+            className="bg-[#1b2838] hover:bg-[#2a3f5a] transition-colors text-white px-8 py-4 rounded-lg font-medium text-lg"
+          >
+            Entrar com Steam
+          </button>
+        </div>
       </main>
-    );
+    )
   }
 
   return (
     <main className="min-h-screen px-6 py-10 max-w-5xl mx-auto">
       <header className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--gold)]">
-            Platinai
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--gold)]">Platinai</h1>
           <p className="text-sm text-[var(--text-secondary)]">
             Logado como {session.user?.name}
           </p>
         </div>
-        <button
-          onClick={() => signOut()}
-          className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-        >
-          Sair
-        </button>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <button
+            onClick={() => signOut()}
+            className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          >
+            Sair
+          </button>
+        </div>
       </header>
 
       <div className="flex items-center justify-between mb-3">
@@ -151,5 +166,5 @@ export default function Home() {
         </ul>
       )}
     </main>
-  );
+  )
 }

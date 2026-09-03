@@ -16,7 +16,24 @@
   --rarity-legendary: #f59e0b;
 }
 
+[data-theme="light"] {
+  --bg-base: #f7f5f2;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #eeece8;
+  --border-subtle: #dedad2;
+  --gold: #b8792a;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b6b6b;
+
+  --rarity-common: #6b7280;
+  --rarity-uncommon: #16a34a;
+  --rarity-rare: #2563eb;
+  --rarity-epic: #9333ea;
+  --rarity-legendary: #d97706;
+}
+
 body {
   background-color: var(--bg-base);
   color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
