@@ -38,7 +38,7 @@ export default function Home() {
       <main className="min-h-screen flex flex-col items-center justify-center gap-6 px-6">
         <div className="text-center">
           <h1 className="text-4xl font-bold tracking-tight text-[var(--gold)]">
-            Steam Trophies
+            Platinai
           </h1>
           <p className="mt-2 text-[var(--text-secondary)]">
             Veja o que falta pra platinar seus jogos, e como fazer isso.
@@ -59,7 +59,7 @@ export default function Home() {
       <header className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-[var(--gold)]">
-            Steam Trophies
+            Platinai
           </h1>
           <p className="text-sm text-[var(--text-secondary)]">
             Logado como {session.user?.name}
