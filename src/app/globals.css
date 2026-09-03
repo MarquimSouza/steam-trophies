@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --bg-base: #0f1115;
+  --bg-base: #000000;
   --bg-surface: #171a21;
   --bg-surface-hover: #1f232c;
   --border-subtle: #2a2e38;
@@ -17,8 +17,8 @@
 }
 
 [data-theme="light"] {
-  --bg-base: #f7f5f2;
-  --bg-surface: #ffffff;
+  --bg-base: #ffffff;
+  --bg-surface: #f5f4f2;
   --bg-surface-hover: #eeece8;
   --border-subtle: #dedad2;
   --gold: #b8792a;

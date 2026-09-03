@@ -1,47 +1,49 @@
-"use client"
-import { signIn, signOut, useSession } from "next-auth/react"
-import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
-import { useTheme } from "./theme-provider"
-import { ThemeToggle } from "@/components/ThemeToggle"
-import { GameCover } from "@/components/GameCover"
+"use client";
+import { signIn, signOut, useSession } from "next-auth/react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useTheme } from "./theme-provider";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { GameCover } from "@/components/GameCover";
 
 type Game = {
-  appid: number
-  name: string
-  playtime_forever: number
-}
+  appid: number;
+  name: string;
+  playtime_forever: number;
+};
 
 export default function Home() {
-  const { data: session } = useSession()
-  const { theme } = useTheme()
-  const [games, setGames] = useState<Game[]>([])
-  const [loading, setLoading] = useState(false)
-  const [search, setSearch] = useState("")
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const { data: session } = useSession();
+  const { theme } = useTheme();
+  const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
     if (session) {
-      setLoading(true)
+      setLoading(true);
       fetch("/api/steam/games")
         .then((res) => res.json())
         .then((data) => setGames(data))
-        .finally(() => setLoading(false))
+        .finally(() => setLoading(false));
     }
-  }, [session])
+  }, [session]);
 
   const visibleGames = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    if (!query) return games
-    return games.filter((g) => g.name.toLowerCase().includes(query))
-  }, [games, search])
+    const query = search.trim().toLowerCase();
+    if (!query) return games;
+    return games.filter((g) => g.name.toLowerCase().includes(query));
+  }, [games, search]);
 
   if (!session) {
-    const wordmark = theme === "dark" ? "/logo_black.png" : "/logo_white.png"
-    const bgClass = theme === "dark" ? "bg-black" : "bg-white"
+    const wordmark = theme === "dark" ? "/logo_black.png" : "/logo_white.png";
+    const bgClass = theme === "dark" ? "bg-black" : "bg-white";
 
     return (
-      <main className={`min-h-screen w-full flex flex-col items-center justify-center gap-8 px-6 ${bgClass}`}>
+      <main
+        className={`min-h-screen w-full flex flex-col items-center justify-center gap-8 px-6 ${bgClass}`}
+      >
         <div className="absolute top-4 right-4 z-10">
           <ThemeToggle />
         </div>
@@ -65,15 +67,19 @@ export default function Home() {
           </button>
         </div>
       </main>
-    )
+    );
   }
 
   return (
     <main className="min-h-screen px-6 py-10 max-w-5xl mx-auto">
       <header className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--gold)]">Platinai</h1>
-          <p className="text-sm text-[var(--text-secondary)]">
+                    <img
+            src={theme === "dark" ? "/logo_black.png" : "/logo_white.png"}
+            alt="Platinai"
+            className="w-48 h-auto"
+          />
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
             Logado como {session.user?.name}
           </p>
         </div>
@@ -166,5 +172,5 @@ export default function Home() {
         </ul>
       )}
     </main>
-  )
+  );
 }

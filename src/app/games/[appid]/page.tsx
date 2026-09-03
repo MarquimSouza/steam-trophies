@@ -4,6 +4,7 @@ import { useParams } from "next/navigation"
 import Link from "next/link"
 import { achievementGuides } from "@/data/guides"
 import { getRarityTier } from "@/lib/rarity"
+import { ThemeToggle } from "@/components/ThemeToggle"
 
 type GuideData = { text: string; videoUrl: string | null }
 
@@ -91,40 +92,6 @@ export default function GameAchievementsPage() {
     }
   }
 
-  async function handleRegenerateGuide(a: Achievement) {
-  setGenerating((prev) => ({ ...prev, [a.apiname]: true }))
-  setGenerateErrors((prev) => ({ ...prev, [a.apiname]: "" }))
-
-  try {
-    const deleteRes = await fetch("/api/guides/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appid, apiname: a.apiname }),
-    })
-
-    if (!deleteRes.ok) {
-      const deleteJson = await deleteRes.json()
-      throw new Error(deleteJson.error ?? "Erro ao apagar guia antigo")
-    }
-
-    setSavedGuides((prev) => {
-      const updated = { ...prev }
-      delete updated[a.apiname]
-      return updated
-    })
-    setDynamicGuides((prev) => {
-      const updated = { ...prev }
-      delete updated[a.apiname]
-      return updated
-    })
-
-    await handleGenerateGuide(a)
-  } catch (err: any) {
-    setGenerateErrors((prev) => ({ ...prev, [a.apiname]: err.message }))
-    setGenerating((prev) => ({ ...prev, [a.apiname]: false }))
-  }
-}
-
   const visibleAchievements = useMemo(() => {
     if (!data) return []
 
@@ -170,13 +137,14 @@ export default function GameAchievementsPage() {
   return (
     <main className="min-h-screen">
       <div className="sticky top-0 z-10 bg-[var(--bg-base)]/95 backdrop-blur border-b border-[var(--border-subtle)]">
-        <div className="max-w-3xl mx-auto px-6 py-3">
+        <div className="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between">
           <Link
             href="/"
             className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors inline-flex items-center gap-1"
           >
             ← Voltar à biblioteca
           </Link>
+          <ThemeToggle />
         </div>
       </div>
 
@@ -277,8 +245,8 @@ export default function GameAchievementsPage() {
                     💡 <strong>Dica:</strong> {guide.text}
                     {guide.videoUrl && (
                       <div className="mt-2">
-                        
-                          <a href={guide.videoUrl}
+                        <a 
+                          href={guide.videoUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[var(--gold)] hover:underline text-sm inline-flex items-center gap-1"
@@ -288,6 +256,7 @@ export default function GameAchievementsPage() {
                       </div>
                     )}
 
+                    {/* Botão de regenerar comentado — era só para testes iniciais
                     {!isStatic && (
                       <div className="mt-2">
                         <button
@@ -299,6 +268,7 @@ export default function GameAchievementsPage() {
                         </button>
                       </div>
                     )}
+                    */}
                   </div>
                 )}
 
